@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Коефіцієнт природного приросту</title>
+<meta name="description" content="Навчальна платформа для розрахунку коефіцієнта природного приросту населення та оцінювання рівня економічної безпеки держави за Методичними рекомендаціями (наказ № 1277 від 29.10.2013).">
+<style>
+:root{
+  --bg:#f5f5f7; --surface:#ffffff; --surface-2:#fbfbfd; --ink:#1d1d1f; --ink-2:#424245; --muted:#6e6e73;
+  --hair:rgba(0,0,0,.08); --hair-2:rgba(0,0,0,.14);
+  --blue:#0071e3; --blue-press:#0062c3; --blue-tint:rgba(0,113,227,.10);
+  --red:#e30000; --red-tint:rgba(227,0,0,.07); --green:#248a3d;
+  --glass:rgba(251,251,253,.72);
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 28px rgba(0,0,0,.06);
+  --l-opt:#34c759; --l-sat:#99cc33; --l-uns:#ffcc00; --l-dan:#ff9500; --l-cri:#ff3b30; --l-abs:#b3170d;
+  --radius:22px; --ease:cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#000; --surface:#1c1c1e; --surface-2:#2c2c2e; --ink:#f5f5f7; --ink-2:#d2d2d7; --muted:#98989d;
+    --hair:rgba(255,255,255,.10); --hair-2:rgba(255,255,255,.18);
+    --blue:#2997ff; --blue-press:#0a84ff; --blue-tint:rgba(41,151,255,.16);
+    --red:#ff6961; --red-tint:rgba(255,105,97,.12); --green:#30d158;
+    --glass:rgba(22,22,23,.72); --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35);
+    --l-opt:#30d158; --l-sat:#a4d65e; --l-uns:#ffd60a; --l-dan:#ff9f0a; --l-cri:#ff453a; --l-abs:#d93a2f;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:100%/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;letter-spacing:-.003em}
+a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+
+/* ---------- translucent nav ---------- */
+.nav{position:sticky;top:0;z-index:10;background:var(--glass);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+.nav::after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:12px;pointer-events:none;
+  background:linear-gradient(var(--glass),transparent);opacity:0;transition:opacity .2s}
+.nav.scrolled::after{opacity:1}
+.nav .in{max-width:980px;margin:0 auto;padding:0 20px;height:52px;display:flex;align-items:center;gap:20px}
+.nav .brand{font-weight:600;font-size:1.05rem;letter-spacing:-.01em;margin-right:auto;white-space:nowrap}
+.nav a.lk{color:var(--ink-2);font-size:.82rem}
+.nav a.lk:hover{color:var(--ink);text-decoration:none}
+
+/* ---------- hero ---------- */
+.hero{max-width:980px;margin:0 auto;padding:clamp(48px,8vw,92px) 20px clamp(28px,4vw,44px);text-align:center}
+.eyebrow{color:var(--muted);font-size:.95rem;font-weight:600;letter-spacing:.01em;margin:0 0 10px}
+.hero h1{overflow-wrap:break-word;font-size:clamp(2rem,6vw,4rem);line-height:1.05;letter-spacing:-.03em;font-weight:700;margin:0}
+.hero p.lead{font-size:clamp(1.05rem,2.2vw,1.35rem);line-height:1.4;color:var(--ink-2);max-width:720px;margin:18px auto 0;letter-spacing:-.01em}
+.formula-hero{display:inline-flex;align-items:center;gap:.5em;margin-top:28px;padding:14px 26px;border-radius:999px;
+  background:var(--surface);box-shadow:var(--shadow);font-size:1.15rem}
+.frac{display:inline-flex;flex-direction:column;text-align:center;line-height:1.25}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 .35em}
+.formula-hero i{font-style:normal;font-weight:600}
+
+main{max-width:980px;margin:0 auto;padding:0 16px 64px;display:grid;gap:20px}
+main>*{min-width:0}
+html,body{overflow-x:hidden}
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(22px,4vw,40px)}
+.card h2{font-size:clamp(1.6rem,3.4vw,2.1rem);line-height:1.12;letter-spacing:-.022em;margin:0 0 6px;font-weight:700}
+.card h3{font-size:1.18rem;letter-spacing:-.012em;margin:30px 0 10px;font-weight:600}
+.sub{color:var(--muted);margin:0 0 22px;font-size:1.02rem}
+.muted{color:var(--muted)}
+.small{font-size:.86rem;color:var(--muted);letter-spacing:.004em}
+
+/* ---------- segmented progress ---------- */
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--bg);padding:4px;border-radius:12px;margin-bottom:28px}
+.seg button{all:unset;cursor:default;text-align:center;font-size:.82rem;font-weight:500;color:var(--muted);padding:8px 6px;border-radius:9px;
+  transition:background .25s var(--ease),color .25s var(--ease),box-shadow .25s var(--ease);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg button.done{color:var(--green);cursor:pointer}
+.seg button.done:hover{background:var(--surface)}
+
+/* ---------- fields ---------- */
+.field{margin:0 0 18px;max-width:380px}
+.field label{display:block;font-size:.88rem;font-weight:600;color:var(--ink-2);margin:0 0 7px}
+input[type=text]{width:100%;font:inherit;font-size:1.05rem;color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--hair-2);border-radius:12px;padding:12px 14px;outline:none;
+  transition:border-color .15s,box-shadow .15s,background .15s}
+input[type=text]::placeholder{color:var(--muted);opacity:.7}
+input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 4px var(--blue-tint);background:var(--surface)}
+input.bad{border-color:var(--red);background:var(--red-tint)}
+input.bad:focus{box-shadow:0 0 0 4px var(--red-tint)}
+.msg{min-height:1.25em;font-size:.84rem;color:var(--red);margin-top:6px}
+.help{font-size:.84rem;color:var(--muted);margin-top:6px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.row .field{flex:1;min-width:160px}
+
+/* ---------- buttons ---------- */
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:26px}
+.btn{font:inherit;font-size:1rem;font-weight:500;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;
+  background:var(--blue);color:#fff;transition:transform .1s ease-out,background .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn:hover{background:var(--blue-press)}
+.btn.pressed{transform:scale(.97)}
+.btn.ghost{background:transparent;color:var(--blue);padding:11px 14px}
+.btn.ghost:hover{background:var(--blue-tint)}
+.btn.tinted{background:var(--blue-tint);color:var(--blue)}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 4px var(--blue-tint)}
+.status{font-size:.9rem;color:var(--muted)}
+
+/* ---------- error summary ---------- */
+.alert{display:none;margin-top:18px;border-radius:14px;background:var(--red-tint);color:var(--red);padding:14px 18px;font-size:.92rem}
+.alert.show{display:block}
+.alert b{display:block;margin-bottom:4px}
+.alert ul{margin:0;padding-left:18px}
+
+/* ---------- tables ---------- */
+.tbl{overflow-x:auto;border-radius:14px;border:1px solid var(--hair)}
+table{border-collapse:collapse;width:100%;font-size:.93rem;font-variant-numeric:tabular-nums}
+th,td{padding:11px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--hair)}
+th{font-weight:600;font-size:.8rem;color:var(--muted);background:var(--surface-2);letter-spacing:.01em}
+tbody tr:last-child td{border-bottom:none}
+td:first-child,th:first-child{text-align:left}
+td.c,th.c{text-align:center}
+tfoot td{font-weight:600;background:var(--surface-2);border-top:1px solid var(--hair-2);border-bottom:none}
+.grid-in td{padding:6px 8px}
+.grid-in input{padding:9px 11px;font-size:.98rem;min-width:130px;text-align:right;border-radius:10px}
+.grid-in td:first-child{font-weight:600;padding-left:16px}
+
+/* ---------- level pills ---------- */
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;font-weight:600;padding:3px 11px 3px 9px;border-radius:999px;
+  background:color-mix(in srgb,var(--c) 16%,transparent);color:color-mix(in srgb,var(--c) 70%,var(--ink))}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.lv-opt{--c:var(--l-opt)} .lv-sat{--c:var(--l-sat)} .lv-uns{--c:var(--l-uns)}
+.lv-dan{--c:var(--l-dan)} .lv-cri{--c:var(--l-cri)} .lv-abs{--c:var(--l-abs)}
+
+/* ---------- result hero ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:8px 0 8px}
+.kpi{background:var(--surface-2);border-radius:18px;padding:18px 20px}
+.kpi>span:not(.pill){display:block;font-size:.82rem;color:var(--muted);font-weight:500}
+.kpi b{display:block;font-size:clamp(1.6rem,3.6vw,2.2rem);letter-spacing:-.025em;line-height:1.15;margin-top:4px;font-weight:700}
+.kpi .pill{margin-top:12px;font-size:1.02rem;padding:7px 14px 7px 12px;white-space:nowrap}
+
+/* ---------- scale bar ---------- */
+.scale{position:relative;margin:34px 0 8px}
+.scale .bar{display:flex;height:10px;border-radius:999px;overflow:hidden;gap:2px}
+.scale .bar span{flex:1;background:var(--c)}
+.scale .ticks{display:flex;margin-top:8px}
+.scale .ticks span{flex:1;min-width:0;overflow-wrap:anywhere;font-size:.72rem;color:var(--muted);text-align:center;line-height:1.25}
+.scale .bar span{min-width:0}
+.scale .edges{position:relative;height:16px;margin-top:2px}
+.scale .edges span{position:absolute;transform:translateX(-50%);font-size:.74rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.marker{position:absolute;top:-30px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;transition:left .6s var(--ease)}
+.marker b{font-size:.78rem;background:var(--ink);color:var(--surface);padding:2px 8px;border-radius:6px;white-space:nowrap}
+.marker i{width:2px;height:22px;background:var(--ink);display:block}
+
+.conclusion p{font-size:1.06rem;line-height:1.6;color:var(--ink-2);margin:0 0 12px;letter-spacing:-.005em}
+.conclusion p:first-child{color:var(--ink);font-size:1.14rem}
+svg text{fill:var(--muted);font-size:12px;font-family:inherit}
+
+/* ---------- method ---------- */
+.defs{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:18px 0 0;font-size:.98rem}
+.defs dt{font-weight:600;font-style:italic}
+.defs dd{margin:0;color:var(--ink-2)}
+.formula-box{background:var(--surface-2);border-radius:18px;padding:22px;text-align:center;font-size:1.35rem;margin:18px 0 6px}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0}
+.chip{background:var(--surface-2);border-radius:12px;padding:10px 14px;font-size:.9rem}
+.chip b{display:block;font-size:1.12rem;letter-spacing:-.01em}
+.src{font-size:.9rem;color:var(--muted);line-height:1.55}
+
+footer{max-width:980px;margin:0 auto;padding:10px 20px 44px;font-size:.78rem;color:var(--muted);line-height:1.6}
+footer .line{border-top:1px solid var(--hair);padding-top:14px}
+.hidden{display:none!important}
+
+@media (max-width:640px){
+  .nav a.lk{display:none}
+  .seg button{font-size:.74rem;padding:8px 2px}
+  .defs{grid-template-columns:1fr}
+  .scale .ticks{display:none}
+  .scale{margin-top:40px}
+}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition-duration:.01ms!important} .marker{transition:none} }
+@media (prefers-reduced-transparency: reduce){ .nav{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none} }
+@media (prefers-contrast: more){ :root{--hair:rgba(0,0,0,.35);--hair-2:rgba(0,0,0,.5)} .card{border:1px solid var(--hair-2)} }
+@media print{
+  .nav,.hero .formula-hero,#calc,.actions{display:none!important}
+  body{background:#fff} .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid} .hero{padding:10px 0}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav"><div class="in">
+  <span class="brand">Природний приріст</span>
+  <a class="lk" href="#calc">Розрахунок</a>
+  <a class="lk" href="#results" id="navRes">Результати</a>
+  <a class="lk" href="#method">Методика</a>
+  <a class="lk" href="#thresholds">Порогові значення</a>
+</div></nav>
+
+<header class="hero">
+  <p class="eyebrow">Демографічна безпека · Індикатор 2.4</p>
+  <h1>Коефіцієнт природного приросту</h1>
+  <p class="lead">Розрахуйте показник за роками, отримайте середнє значення за період і визначте рівень економічної безпеки держави за Методичними рекомендаціями № 1277.</p>
+  <div class="formula-hero" aria-label="Формула: K дорівнює N мінус M, поділене на S, помножене на 1000">
+    <i>K<sub>пп</sub></i> = <span class="frac"><span>N − M</span><span>S</span></span> × 1000, ‰
+  </div>
+</header>
+
+<main>
+<section class="card" id="calc" aria-labelledby="calcTitle">
+  <div class="seg" id="seg" role="tablist" aria-label="Кроки розрахунку"></div>
+  <div id="stage" aria-live="polite"></div>
+  <div class="alert" id="alert" role="alert"></div>
+</section>
+
+<section class="card hidden" id="results" aria-labelledby="resTitle">
+  <h2 id="resTitle">Результат</h2>
+  <p class="sub" id="resSub"></p>
+  <div class="kpis" id="kpis"></div>
+  <div class="scale" id="scale"></div>
+
+  <h3>Розрахунок за роками</h3>
+  <div class="tbl"><table id="resTable"></table></div>
+
+  <h3>Динаміка</h3>
+  <div id="chart"></div>
+
+  <h3>Аналітичний висновок</h3>
+  <div class="conclusion" id="conclusion"></div>
+
+  <div class="actions">
+    <button class="btn tinted" id="csvBtn" type="button">Завантажити CSV</button>
+    <button class="btn tinted" id="printBtn" type="button">Друк / PDF</button>
+    <button class="btn ghost" id="editBtn" type="button">Змінити дані</button>
+    <button class="btn ghost" id="resetBtn" type="button">Почати заново</button>
+  </div>
+</section>
+
+<section class="card" id="method">
+  <h2>Методика розрахунку</h2>
+  <p class="sub">Як рахується показник і що він означає.</p>
+  <p>Коефіцієнт природного приросту характеризує інтенсивність природного відтворення населення: на скільки осіб кількість народжених за рік перевищує кількість померлих (або навпаки) у розрахунку на 1000 осіб наявного населення.</p>
+  <div class="formula-box"><i>K<sub>пп</sub></i> = <span class="frac"><span>N − M</span><span>S</span></span> × 1000</div>
+  <dl class="defs">
+    <dt>N</dt><dd>кількість живонароджених за рік, осіб</dd>
+    <dt>M</dt><dd>кількість померлих за рік, осіб</dd>
+    <dt>S</dt><dd>середньорічна чисельність наявного населення, осіб</dd>
+    <dt>K<sub>пп</sub></dt><dd>коефіцієнт природного приросту, ‰ (проміле) — осіб на 1 тис. осіб наявного населення</dd>
+  </dl>
+  <h3>Тлумачення</h3>
+  <p>Додатне значення означає природний приріст населення, від'ємне — природне скорочення (депопуляцію), коли померлих більше, ніж народжених. За наказом № 1277 індикатор нормується за лівою частиною шкали (L), тобто є <b>стимулятором</b>: що вище значення, то вищий рівень економічної безпеки.</p>
+  <p>Рівень економічної безпеки визначається за <b>середнім арифметичним</b> річних значень коефіцієнта за досліджуваний період.</p>
+  <div class="chips">
+    <div class="chip"><span class="muted">Одиниця виміру</span><b>‰, на 1 тис. осіб</b></div>
+    <div class="chip"><span class="muted">Тип індикатора</span><b>Стимулятор (L)</b></div>
+    <div class="chip"><span class="muted">Ваговий коефіцієнт</span><b>0,1874</b></div>
+  </div>
+</section>
+
+<section class="card" id="thresholds">
+  <h2>Порогові значення</h2>
+  <p class="sub">Характеристичні значення індикатора 2.4 з додатка 2 до Методичних рекомендацій.</p>
+  <div class="tbl"><table>
+    <thead><tr><th class="c">X<sub>L крит</sub></th><th class="c">X<sub>L небезп</sub></th><th class="c">X<sub>L нездв</sub></th><th class="c">X<sub>L здв</sub></th><th class="c">X<sub>L опт</sub></th></tr></thead>
+    <tbody><tr><td class="c">−2</td><td class="c">−1</td><td class="c">0</td><td class="c">1</td><td class="c">1,5</td></tr></tbody>
+  </table></div>
+  <h3>Інтервали рівнів економічної безпеки</h3>
+  <div class="tbl"><table id="thrTable"></table></div>
+  <p class="small" style="margin-top:12px">Квадратна дужка — межа входить до інтервалу, кругла — не входить. Значення, нижчі за критичне (X<sub>L крит</sub>), відносяться до рівня «Абсолютна небезпека».</p>
+  <h3>Джерело</h3>
+  <p class="src">Міністерство економічного розвитку і торгівлі України. (2013). <i>Про затвердження Методичних рекомендацій щодо розрахунку рівня економічної безпеки України: Наказ від 29 жовтня 2013 р. № 1277.</i> Верховна Рада України. <a href="https://zakon.rada.gov.ua/rada/show/v1277731-13#Text" target="_blank" rel="noopener">https://zakon.rada.gov.ua/rada/show/v1277731-13</a></p>
+  <p class="small">Наказ втратив чинність у 2025 р.; у межах навчального завдання використовується як методична база. Розрахунок виконується локально у браузері — введені дані нікуди не надсилаються.</p>
+</section>
+</main>
+
+<footer><div class="line">
+  Навчальна платформа з дисципліни «Інформаційні технології у системі забезпечення економічної безпеки держави».<br>
+  Виконав: Чайка Максим Володимирович.
+</div></footer>
+
+<script>
+"use strict";
+/* ===== Порогові значення індикатора 2.4 (додаток 2 до наказу № 1277):
+   XLкрит = −2; XLнебезп = −1; XLнездв = 0; XLздв = 1; XLопт = 1,5 (стимулятор, ліва частина) ===== */
+const THRESHOLDS = [
+  {min:null, max:-2,  minInc:false, maxInc:false, level:"Абсолютна небезпека"},
+  {min:-2,   max:-1,  minInc:true,  maxInc:false, level:"Критичний"},
+  {min:-1,   max:0,   minInc:true,  maxInc:false, level:"Небезпечний"},
+  {min:0,    max:1,   minInc:true,  maxInc:false, level:"Незадовільний"},
+  {min:1,    max:1.5, minInc:true,  maxInc:false, level:"Задовільний"},
+  {min:1.5,  max:null,minInc:true,  maxInc:false, level:"Оптимальний"}
+];
+const CLS = {"Оптимальний":"lv-opt","Задовільний":"lv-sat","Незадовільний":"lv-uns","Небезпечний":"lv-dan","Критичний":"lv-cri","Абсолютна небезпека":"lv-abs"};
+const RANK = {"Абсолютна небезпека":0,"Критичний":1,"Небезпечний":2,"Незадовільний":3,"Задовільний":4,"Оптимальний":5};
+const MAX_YEARS = 15, MIN_YEAR = 1950, NOW = new Date().getFullYear();
+const S = {step:1, maxStep:1, country:"", ys:null, ye:null, rows:{}};
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const minus = s => s.replace(/-/g,"−");
+const fmt = (x,d=2) => minus(x.toLocaleString("uk-UA",{minimumFractionDigits:d,maximumFractionDigits:d}));
+const fmtInt = x => minus(Math.round(x).toLocaleString("uk-UA"));
+const num = x => x===null ? null : minus(String(x).replace(".",","));
+const label = t => (t.min!==null&&t.minInc?"[":"(")+(t.min===null?"−∞":num(t.min))+"; "+(t.max===null?"+∞":num(t.max))+(t.max!==null&&t.maxInc?"]":")");
+const classify = v => THRESHOLDS.find(t => (t.min===null||(t.minInc?v>=t.min:v>t.min)) && (t.max===null||(t.maxInc?v<=t.max:v<t.max)));
+const pill = t => `<span class="pill ${CLS[t.level]}">${t.level}</span>`;
+const yWord = n => {const a=n%10,b=n%100; return a===1&&b!==11?"рік":a>=2&&a<=4&&(b<12||b>14)?"роки":"років";};
+
+/* ----- press feedback on pointer-down (instant), commit on release ----- */
+document.addEventListener("pointerdown",e=>{const b=e.target.closest(".btn"); if(b){b.classList.add("pressed");}});
+["pointerup","pointercancel","pointerleave"].forEach(ev=>document.addEventListener(ev,()=>document.querySelectorAll(".btn.pressed").forEach(b=>b.classList.remove("pressed")),true));
+/* ----- scroll edge effect on nav ----- */
+addEventListener("scroll",()=>$("nav").classList.toggle("scrolled",scrollY>4),{passive:true});
+
+/* ----- stage transition: opacity + small rise, interruptible (WAAPI from current value) ----- */
+let anim=null;
+function enter(el){
+  if(anim) anim.cancel();
+  anim = el.animate(reduced?[{opacity:0},{opacity:1}]:[{opacity:0,transform:"translateY(10px)"},{opacity:1,transform:"none"}],
+    {duration:reduced?150:380,easing:"cubic-bezier(.2,.8,.2,1)"});
+}
+
+/* ================= validation (pure) ================= */
+function vCountry(v){
+  v=v.trim().replace(/\s+/g," ");
+  if(!v) return "Вкажіть назву країни.";
+  if(v.length<2) return "Назва має містити щонайменше 2 символи.";
+  if(v.length>60) return "Назва не може бути довшою за 60 символів.";
+  if(!/^[A-Za-zА-Яа-яЇїІіЄєҐґЁёЪъЫыЭэ' ʼ’\-]+$/.test(v)) return "Допускаються лише літери, пробіл, дефіс та апостроф.";
+  if(!/[A-Za-zА-Яа-яЇїІіЄєҐґ]{2}/.test(v)) return "Назва має містити щонайменше дві літери поспіль.";
+  return "";
+}
+function vYear(v){
+  v=v.trim();
+  if(!v) return "Вкажіть рік.";
+  if(!/^\d{4}$/.test(v)) return "Рік — це чотири цифри, наприклад 2014.";
+  if(+v<MIN_YEAR||+v>NOW) return `Допустимий діапазон — ${MIN_YEAR}–${NOW}.`;
+  return "";
+}
+function parseInt0(raw){ const s=raw.replace(/[\s  ]/g,""); return /^\d+$/.test(s)?Number(s):NaN; }
+function vCell(raw){
+  const s=raw.replace(/[\s  ]/g,"");
+  if(!s) return "Поле не заповнено.";
+  if(/^-/.test(s)) return "Значення не може бути від'ємним.";
+  if(/[.,]/.test(s)) return "Введіть ціле число осіб, без десяткових знаків.";
+  if(!/^\d+$/.test(s)) return "Допускаються лише цифри (і пробіли між розрядами).";
+  if(!Number.isSafeInteger(+s)) return "Занадто велике число.";
+  return "";
+}
+function vRow(r){ // r = {N,M,S} numbers; returns {field:msg}
+  const e={};
+  if(r.S!==undefined){
+    if(r.S===0) e.S="Чисельність населення має бути більшою за 0.";
+    else if(r.S<1000) e.S="Замало для країни — дані вводяться в особах, а не в тисячах.";
+  }
+  if(!e.S && r.S){
+    for(const k of ["N","M"]){ if(r[k]===undefined) continue;
+      const w=k==="N"?"Народжених":"Померлих";
+      if(r[k]>r.S) e[k]=`${w} більше, ніж населення.`;
+      else if(r[k]/r.S*1000>60) e[k]=`${w} ${fmt(r[k]/r.S*1000,1)} на 1000 осіб — неправдоподібно (понад 60 ‰).`;
+    }
+  }
+  if(r.N===0&&r.M===0){e.N=e.N||"Народжених і померлих одночасно 0."; e.M=e.M||"Перевірте дані.";}
+  return e;
+}
+
+/* ================= steps ================= */
+const STEPS=["Країна","Період","Дані","Результат"];
+function renderSeg(){
+  $("seg").innerHTML=STEPS.map((n,i)=>{const k=i+1;
+    const c=k===S.step?"on":(k<=S.maxStep&&k!==S.step?"done":"");
+    return `<button type="button" role="tab" aria-selected="${k===S.step}" class="${c}" data-k="${k}" ${c==="done"?"":"tabindex='-1'"}>${k}. ${n}</button>`;}).join("");
+  $("seg").querySelectorAll("button.done").forEach(b=>b.onclick=()=>go(+b.dataset.k));
+}
+function alertBox(list){
+  const a=$("alert");
+  if(!list.length){a.classList.remove("show");a.innerHTML="";return;}
+  a.innerHTML="<b>Перевірте введені дані</b><ul>"+list.slice(0,10).map(x=>"<li>"+esc(x)+"</li>").join("")+(list.length>10?`<li>…і ще ${list.length-10}</li>`:"")+"</ul>";
+  a.classList.add("show");
+}
+function go(k){
+  if(k===4 && S.maxStep<4) return;
+  S.step=k; render();
+}
+function fieldMsg(input,msg){
+  input.classList.toggle("bad",!!msg);
+  input.setAttribute("aria-invalid",msg?"true":"false");
+  const m=input.closest(".field")?.querySelector(".msg"); if(m) m.textContent=msg;
+}
+
+function render(){
+  renderSeg(); alertBox([]);
+  const st=$("stage");
+  if(S.step===1){
+    st.innerHTML=`<h2 id="calcTitle">Для якої країни розрахунок?</h2>
+      <p class="sub">Назва потрібна для підсумкової таблиці та висновку.</p>
+      <div class="field"><label for="country">Країна</label>
+        <input type="text" id="country" maxlength="60" autocomplete="off" placeholder="Наприклад, Хорватія" value="${esc(S.country)}">
+        <div class="msg"></div></div>
+      <div class="actions"><button class="btn" id="n1" type="button">Продовжити</button></div>`;
+    const c=$("country");
+    c.addEventListener("input",()=>{ if(c.classList.contains("bad")) fieldMsg(c,vCountry(c.value)); });
+    c.addEventListener("blur",()=>{ if(c.value.trim()) fieldMsg(c,vCountry(c.value)); });
+    c.addEventListener("keydown",e=>{if(e.key==="Enter")next1();});
+    $("n1").onclick=next1; c.focus();
+  }
+  else if(S.step===2){
+    st.innerHTML=`<h2 id="calcTitle">Який період аналізуємо?</h2>
+      <p class="sub">Від 1 до ${MAX_YEARS} років, у межах ${MIN_YEAR}–${NOW}.</p>
+      <div class="row">
+        <div class="field"><label for="ys">Перший рік</label><input type="text" id="ys" inputmode="numeric" maxlength="4" placeholder="РРРР" value="${S.ys??""}"><div class="msg"></div></div>
+        <div class="field"><label for="ye">Останній рік</label><input type="text" id="ye" inputmode="numeric" maxlength="4" placeholder="РРРР" value="${S.ye??""}"><div class="msg"></div></div>
+      </div>
+      <div class="status" id="span"></div>
+      <div class="actions"><button class="btn" id="n2" type="button">Продовжити</button><button class="btn ghost" id="b2" type="button">Назад</button></div>`;
+    const a=$("ys"), b=$("ye");
+    const upd=()=>{ const ok=!vYear(a.value)&&!vYear(b.value);
+      $("span").textContent = ok ? (+b.value<+a.value ? "" : `Період: ${+b.value-+a.value+1} ${yWord(+b.value-+a.value+1)}`) : ""; };
+    [a,b].forEach(x=>{
+      x.addEventListener("input",()=>{ x.value=x.value.replace(/\D/g,""); if(x.classList.contains("bad")) fieldMsg(x,vYear(x.value)); upd(); });
+      x.addEventListener("blur",()=>{ if(x.value) fieldMsg(x,vYear(x.value)); });
+      x.addEventListener("keydown",e=>{if(e.key==="Enter")next2();});
+    });
+    upd(); $("n2").onclick=next2; $("b2").onclick=()=>go(1); a.focus();
+  }
+  else if(S.step===3){
+    let tr="";
+    for(let y=S.ys;y<=S.ye;y++){
+      const r=S.rows[y]||{};
+      const cell=k=>`<td><div class="field" style="margin:0;max-width:none"><input type="text" inputmode="numeric" data-y="${y}" data-k="${k}" value="${r[k]!==undefined?fmtInt(r[k]):""}" aria-label="${y}: ${({N:"народжені",M:"померлі",S:"середньорічна чисельність"})[k]}"><div class="msg" style="min-height:0;white-space:normal;max-width:220px"></div></div></td>`;
+      tr+=`<tr><td>${y}</td>${cell("N")}${cell("M")}${cell("S")}</tr>`;
+    }
+    st.innerHTML=`<h2 id="calcTitle">Вихідні дані: ${esc(S.country)}</h2>
+      <p class="sub">${S.ys===S.ye?S.ys+" р.":S.ys+"–"+S.ye+" рр."} · усі значення в особах, цілими числами. Пробіли між розрядами допускаються.</p>
+      <div class="tbl grid-in"><table>
+        <thead><tr><th>Рік</th><th>Живонароджені N</th><th>Померлі M</th><th>Середньорічна чисельність S</th></tr></thead>
+        <tbody>${tr}</tbody></table></div>
+      <p class="help">Перевіряється: заповненість, формат (лише цілі невід'ємні числа), S &gt; 0, N і M не більші за S, правдоподібність (понад 60 народжених чи померлих на 1000 осіб вважається помилкою введення).</p>
+      <div class="actions"><button class="btn" id="n3" type="button">Розрахувати</button><button class="btn ghost" id="b3" type="button">Назад</button><span class="status" id="fillStatus"></span></div>`;
+    const inputs=[...st.querySelectorAll(".grid-in input")];
+    const total=inputs.length;
+    const status=()=>{const f=inputs.filter(i=>i.value.trim()).length; $("fillStatus").textContent=`Заповнено ${f} з ${total}`;};
+    inputs.forEach((inp,idx)=>{
+      inp.addEventListener("input",()=>{ inp.value=inp.value.replace(/[^\d\s\-.,]/g,""); if(inp.classList.contains("bad")) checkCell(inp); status(); });
+      inp.addEventListener("blur",()=>{ if(inp.value.trim()){ checkCell(inp); const n=parseInt0(inp.value); if(!isNaN(n)&&!vCell(inp.value)) inp.value=fmtInt(n);} });
+      inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); (inputs[idx+1]||$("n3")).focus(); } });
+      inp.addEventListener("paste",e=>pasteGrid(e,idx,inputs,status));
+    });
+    status(); $("n3").onclick=next3; $("b3").onclick=()=>{saveRows(inputs);go(2);}; inputs[0].focus();
+  }
+  else{
+    st.innerHTML=`<h2 id="calcTitle">Розрахунок виконано</h2>
+      <p class="sub">${esc(S.country)}, ${S.ys===S.ye?S.ys+" р.":S.ys+"–"+S.ye+" рр."} Результати — нижче.</p>
+      <div class="actions"><a class="btn" href="#results" style="text-decoration:none">Переглянути результат</a><button class="btn ghost" id="b4" type="button">Змінити дані</button></div>`;
+    $("b4").onclick=()=>go(3);
+  }
+  enter(st);
+}
+function checkCell(inp){
+  let msg=vCell(inp.value);
+  if(!msg){ // row-level checks
+    const y=inp.dataset.y, row={};
+    document.querySelectorAll(`.grid-in input[data-y="${y}"]`).forEach(i=>{ if(!vCell(i.value)) row[i.dataset.k]=parseInt0(i.value); });
+    msg=vRow(row)[inp.dataset.k]||"";
+  }
+  fieldMsg(inp,msg); return msg;
+}
+function pasteGrid(e,idx,inputs,status){ // paste a column/table from Excel
+  const t=(e.clipboardData||window.clipboardData).getData("text");
+  if(!/[\t\n]/.test(t.trim())) return;
+  e.preventDefault();
+  const rows=t.trim().split(/\r?\n/).map(r=>r.split("\t"));
+  const cols=3, r0=Math.floor(idx/cols), c0=idx%cols;
+  rows.forEach((r,i)=>r.forEach((v,j)=>{ const k=(r0+i)*cols+(c0+j); if(j+c0<cols&&inputs[k]){ inputs[k].value=v.trim(); checkCell(inputs[k]); } }));
+  status();
+}
+function saveRows(inputs){
+  inputs.forEach(i=>{ const y=+i.dataset.y; S.rows[y]=S.rows[y]||{}; const n=parseInt0(i.value); if(!vCell(i.value)) S.rows[y][i.dataset.k]=n; else delete S.rows[y][i.dataset.k]; });
+}
+function next1(){
+  const c=$("country"), m=vCountry(c.value); fieldMsg(c,m);
+  if(m){alertBox([m]); c.focus(); return;}
+  S.country=c.value.trim().replace(/\s+/g," "); S.maxStep=Math.max(S.maxStep,2); go(2);
+}
+function next2(){
+  const a=$("ys"), b=$("ye"); const ma=vYear(a.value), mb=vYear(b.value);
+  fieldMsg(a,ma); fieldMsg(b,mb); const errs=[ma&&"Перший рік: "+ma, mb&&"Останній рік: "+mb].filter(Boolean);
+  if(!errs.length){
+    if(+b.value<+a.value){ errs.push("Останній рік не може бути меншим за перший."); fieldMsg(b,"Має бути не меншим за перший рік."); }
+    else if(+b.value-+a.value+1>MAX_YEARS){ errs.push(`Період не може перевищувати ${MAX_YEARS} років.`); fieldMsg(b,`Максимум ${MAX_YEARS} років.`); }
+  }
+  if(errs.length){alertBox(errs); return;}
+  const ys=+a.value, ye=+b.value;
+  if(ys!==S.ys||ye!==S.ye) S.maxStep=2;
+  S.ys=ys; S.ye=ye; Object.keys(S.rows).forEach(y=>{if(y<ys||y>ye) delete S.rows[y];});
+  S.maxStep=Math.max(S.maxStep,3); go(3);
+}
+function next3(){
+  const inputs=[...document.querySelectorAll(".grid-in input")];
+  const errs=[]; let first=null;
+  inputs.forEach(i=>{ const m=checkCell(i); if(m){ errs.push(`${i.dataset.y} р., ${({N:"народжені",M:"померлі",S:"чисельність"})[i.dataset.k]}: ${m}`); first=first||i; } });
+  if(errs.length){ alertBox(errs); first.focus(); return; }
+  saveRows(inputs);
+  S.maxStep=4; S.step=4; render(); showResults();
+}
+
+/* ================= results ================= */
+function compute(){
+  const R=[]; for(let y=S.ys;y<=S.ye;y++){ const r=S.rows[y]; const inc=r.N-r.M, K=inc/r.S*1000; R.push({year:y,...r,inc,K,lvl:classify(K)}); }
+  const avg=R.reduce((a,r)=>a+r.K,0)/R.length;
+  return {R,avg,lvl:classify(avg)};
+}
+function showResults(){
+  const {R,avg,lvl}=compute(), n=R.length;
+  const sumInc=R.reduce((a,r)=>a+r.inc,0);
+  $("resSub").textContent=`${S.country} · ${n===1?S.ys+" р.":S.ys+"–"+S.ye+" рр."} · ${n} ${yWord(n)}`;
+  $("kpis").innerHTML=`
+    <div class="kpi"><span>Середній коефіцієнт</span><b>${fmt(avg)} ‰</b></div>
+    <div class="kpi"><span>Рівень економічної безпеки</span>${pill(lvl)}</div>
+    <div class="kpi"><span>Природний ${sumInc<0?"спад":"приріст"} за період</span><b>${sumInc>0?"+":""}${fmtInt(sumInc)}</b><span>осіб</span></div>`;
+  renderScale(avg);
+  $("resTable").innerHTML=`<thead><tr><th>Рік</th><th>Народжені N</th><th>Померлі M</th><th>N − M</th><th>Населення S</th><th>K<sub>пп</sub>, ‰</th><th class="c">Рівень</th></tr></thead>
+    <tbody>${R.map(r=>`<tr><td>${r.year}</td><td>${fmtInt(r.N)}</td><td>${fmtInt(r.M)}</td><td>${r.inc>0?"+":""}${fmtInt(r.inc)}</td><td>${fmtInt(r.S)}</td><td>${fmt(r.K)}</td><td class="c">${pill(r.lvl)}</td></tr>`).join("")}</tbody>
+    <tfoot><tr><td>Середнє</td><td colspan="4" style="text-align:left;font-weight:500;color:var(--muted)">середнє арифметичне за ${n} ${yWord(n)}</td><td>${fmt(avg)}</td><td class="c">${pill(lvl)}</td></tr></tfoot>`;
+  const res0=$("results"); res0.classList.remove("hidden");
+  drawChart(R,avg);
+  $("conclusion").innerHTML=conclusion(R,avg,lvl);
+  const res=$("results"); res.classList.remove("hidden"); enter(res);
+  setTimeout(()=>res.scrollIntoView({behavior:reduced?"auto":"smooth"}),60);
+}
+function renderScale(avg){
+  const lo=Math.min(-3,Math.floor(avg-0.5)), hi=Math.max(2.5,Math.ceil(avg+0.5)); // visible window includes the average
+  const pos=v=>(Math.min(Math.max(v,lo),hi)-lo)/(hi-lo)*100;
+  const segs=THRESHOLDS.map(t=>({t,a:pos(t.min===null?lo:t.min),b:pos(t.max===null?hi:t.max)}));
+  const edges=[-2,-1,0,1,1.5];
+  $("scale").innerHTML=`
+    <div class="marker" style="left:${pos(avg)}%"><b style="transform:translateX(${pos(avg)<12?"40%":pos(avg)>88?"-40%":"0"})">${fmt(avg)} ‰</b><i></i></div>
+    <div class="bar">${segs.map(s=>`<span class="${CLS[s.t.level]}" style="flex:${s.b-s.a}"></span>`).join("")}</div>
+    <div class="edges">${edges.map(v=>`<span style="left:${pos(v)}%">${num(v)}</span>`).join("")}</div>
+    <div class="ticks">${segs.map(s=>`<span style="flex:${s.b-s.a}">${s.t.level}</span>`).join("")}</div>`;
+}
+function conclusion(R,avg,lvl){
+  const n=R.length, f=R[0], l=R[n-1], neg=R.filter(r=>r.K<0).length;
+  const mx=R.reduce((a,r)=>r.K>a.K?r:a), mn=R.reduce((a,r)=>r.K<a.K?r:a);
+  const per=n===1?`${S.ys} р.`:`${S.ys}–${S.ye} рр.`;
+  let t=`<p>Середнє значення коефіцієнта природного приросту в країні ${esc(S.country)} за ${per} становить <b>${fmt(avg)} ‰</b>, що належить до інтервалу ${label(lvl)} і відповідає рівню економічної безпеки <b>«${lvl.level}»</b>.</p>`;
+  t+= avg<0 ? `<p>Від'ємне значення свідчить про природне скорочення населення (депопуляцію): у середньому щороку кількість померлих перевищувала кількість народжених на ${fmt(-avg)} особи на кожну 1000 жителів.</p>`
+     : avg>0 ? `<p>Додатне значення свідчить про природний приріст населення: у середньому щороку кількість народжених перевищувала кількість померлих на ${fmt(avg)} особи на кожну 1000 жителів.</p>`
+     : `<p>Кількість народжених і померлих у середньому була збалансованою.</p>`;
+  if(n>1){
+    const d=l.K-f.K, tr=Math.abs(d)<0.05?"залишився практично незмінним":d>0?"покращився":"погіршився";
+    t+=`<p>За період показник ${tr}: з ${fmt(f.K)} ‰ у ${f.year} р. до ${fmt(l.K)} ‰ у ${l.year} р. (${d>0?"+":""}${fmt(d)} ‰). Найвище значення — ${fmt(mx.K)} ‰ (${mx.year} р.), найнижче — ${fmt(mn.K)} ‰ (${mn.year} р.). `
+      + (neg===n?"Природне скорочення населення спостерігалося в усі роки періоду.":neg===0?"Природне скорочення населення не спостерігалося в жодному році.":`Природне скорочення населення спостерігалося у ${neg} з ${n} років.`)+`</p>`;
+    const worst=R.reduce((a,r)=>RANK[r.lvl.level]<RANK[a.lvl.level]?r:a), best=R.reduce((a,r)=>RANK[r.lvl.level]>RANK[a.lvl.level]?r:a);
+    if(worst.lvl.level!==best.lvl.level) t+=`<p>За окремими роками рівень безпеки змінювався від «${worst.lvl.level}» (${worst.year} р.) до «${best.lvl.level}» (${best.year} р.).</p>`;
+  }
+  const r=RANK[lvl.level];
+  t+= r>=4 ? `<p>Природне відтворення населення не створює суттєвих загроз демографічній складовій економічної безпеки держави.</p>`
+     : r>=2 ? `<p>Стан природного відтворення населення є загрозою для демографічної складової економічної безпеки: скорочення населення в перспективі зменшуватиме трудовий потенціал і посилюватиме навантаження на пенсійну та соціальну системи.</p>`
+     : `<p>Природне відтворення населення перебуває в кризовому стані, що є серйозною загрозою демографічній складовій економічної безпеки держави і потребує активної демографічної політики — підтримки народжуваності та зниження смертності.</p>`;
+  return t;
+}
+function drawChart(R,avg){
+  const W=Math.max(340,Math.min(900,$("chart").clientWidth||880)),H=W<560?260:320,pl=46,pr=18,pt=18,pb=34;
+  const v=R.map(r=>r.K).concat([avg,0,-2,1.5]);
+  let lo=Math.min(...v), hi=Math.max(...v); const pad=Math.max((hi-lo)*.12,.5); lo-=pad; hi+=pad;
+  const step=nice((hi-lo)/6); lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step;
+  const x=i=>pl+(R.length===1?(W-pl-pr)/2:i*(W-pl-pr)/(R.length-1)), y=q=>pt+(hi-q)*(H-pt-pb)/(hi-lo);
+  let bands=""; THRESHOLDS.forEach(t=>{ const a=t.max===null?hi:Math.min(t.max,hi), b=t.min===null?lo:Math.max(t.min,lo); if(a>b) bands+=`<rect x="${pl}" y="${y(a)}" width="${W-pl-pr}" height="${y(b)-y(a)}" class="${CLS[t.level]}" style="fill:var(--c)" opacity=".13"/>`; });
+  let grid=""; for(let q=lo;q<=hi+1e-9;q+=step) grid+=`<line x1="${pl}" x2="${W-pr}" y1="${y(q)}" y2="${y(q)}" stroke="var(--hair)"/><text x="${pl-8}" y="${y(q)+4}" text-anchor="end">${fmt(q,step<1?1:0)}</text>`;
+  const pts=R.map((r,i)=>`${x(i)},${y(r.K)}`).join(" ");
+  const every=Math.ceil(R.length/(W<560?5:10));
+  $("chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Графік коефіцієнта природного приросту за роками">
+    ${bands}${grid}
+    <line x1="${pl}" x2="${W-pr}" y1="${y(0)}" y2="${y(0)}" stroke="var(--muted)" stroke-width="1"/>
+    <line x1="${pl}" x2="${W-pr}" y1="${y(avg)}" y2="${y(avg)}" stroke="var(--blue)" stroke-dasharray="5 5" stroke-width="1.5"/>
+    <text x="${W-pr-4}" y="${y(avg)-7}" text-anchor="end" style="fill:var(--blue);font-weight:600">середнє ${fmt(avg)} ‰</text>
+    <polyline points="${pts}" fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${R.map((r,i)=>`<circle cx="${x(i)}" cy="${y(r.K)}" r="5" fill="var(--surface)" stroke="var(--blue)" stroke-width="2.5"><title>${r.year}: ${fmt(r.K)} ‰ — ${r.lvl.level}</title></circle>`).join("")}
+    ${R.map((r,i)=>i%every===0||i===R.length-1?`<text x="${x(i)}" y="${H-10}" text-anchor="middle">${r.year}</text>`:"").join("")}
+  </svg><p class="small">Кольорові зони — рівні економічної безпеки за пороговими значеннями; пунктир — середнє за період.</p>`;
+}
+function nice(r){const p=10**Math.floor(Math.log10(r)), m=r/p; return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p;}
+
+/* ================= actions ================= */
+$("csvBtn").onclick=()=>{
+  const {R,avg,lvl}=compute(), q=s=>`"${String(s).replace(/"/g,'""')}"`, c=x=>x.toFixed(4).replace(".",",");
+  const L=[["Індикатор","Коефіцієнт природного приросту, ‰"],["Країна",S.country],["Період",`${S.ys}–${S.ye}`],[],
+    ["Рік","Народжені N","Померлі M","N − M","Середньорічна чисельність S","Кпп, ‰","Рівень"]];
+  R.forEach(r=>L.push([r.year,r.N,r.M,r.inc,r.S,c(r.K),r.lvl.level]));
+  L.push(["Середнє","","","","",c(avg),lvl.level]);
+  const blob=new Blob(["﻿"+L.map(r=>r.map(q).join(";")).join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`Kpp_${S.country}_${S.ys}-${S.ye}.csv`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$("printBtn").onclick=()=>print();
+$("editBtn").onclick=()=>{ go(3); $("calc").scrollIntoView({behavior:reduced?"auto":"smooth"}); };
+$("resetBtn").onclick=()=>{ if(!confirm("Видалити всі введені дані й почати заново?")) return;
+  Object.assign(S,{step:1,maxStep:1,country:"",ys:null,ye:null,rows:{}}); $("results").classList.add("hidden"); render(); $("calc").scrollIntoView({behavior:reduced?"auto":"smooth"}); };
+
+/* thresholds table */
+$("thrTable").innerHTML=`<thead><tr><th>Інтервал K<sub>пп</sub>, ‰</th><th>Рівень економічної безпеки</th></tr></thead><tbody>`+
+  [...THRESHOLDS].reverse().map(t=>`<tr><td>${label(t)}</td><td>${pill(t)}</td></tr>`).join("")+`</tbody>`;
+render();
+</script>
+</body>
+</html>
